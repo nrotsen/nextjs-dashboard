@@ -1,16 +1,51 @@
-import { CustomerField } from '@/app/lib/definitions';
-import Link from 'next/link';
+"use client";
+
+import { CustomerField } from "@/app/lib/definitions";
+import Link from "next/link";
 import {
   CheckIcon,
   ClockIcon,
   CurrencyDollarIcon,
   UserCircleIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/app/ui/button';
+} from "@heroicons/react/24/outline";
+import { Button } from "@/app/ui/button";
+import { createInvoice } from "@/app/lib/actions";
+import { useState } from "react";
 
 export default function Form({ customers }: { customers: CustomerField[] }) {
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const validateForm = (formData: FormData) => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.get("customerId")) {
+      newErrors.customerId = "Customer is required.";
+    }
+    if (!formData.get("amount")) {
+      newErrors.amount = "Amount is required.";
+    }
+    if (!formData.get("status")) {
+      newErrors.status = "Status is required.";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const validationErrors = validateForm(formData);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+    } else {
+      setErrors({});
+      await createInvoice(formData);
+    }
+  };
+
   return (
-    <form>
+    <form onSubmit={handleSubmit}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
@@ -35,6 +70,9 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
             </select>
             <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
           </div>
+          {errors.customerId && (
+            <p className="mt-1 text-sm text-red-600">{errors.customerId}</p>
+          )}
         </div>
 
         {/* Invoice Amount */}
@@ -54,6 +92,9 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
               />
               <CurrencyDollarIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            {errors.amount && (
+              <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+            )}
           </div>
         </div>
 
@@ -96,6 +137,9 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
               </div>
             </div>
           </div>
+          {errors.status && (
+            <p className="mt-1 text-sm text-red-600">{errors.status}</p>
+          )}
         </fieldset>
       </div>
       <div className="mt-6 flex justify-end gap-4">
